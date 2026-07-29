@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stay Signal — NYC Room Type Predictor</title>
+<meta name="description" content="Predict the room type of a New York City Airbnb listing from its location, price and activity signals.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<!-- ambient background -->
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-blobs" aria-hidden="true">
+  <span class="blob blob--amber"></span>
+  <span class="blob blob--green"></span>
+  <span class="blob blob--purple"></span>
+</div>
+
+<!-- NAV -->
+<header class="nav">
+  <div class="nav__inner">
+    <a class="nav__brand" href="#top">
+      <span class="nav__mark">●</span> STAY&nbsp;SIGNAL
+    </a>
+    <nav class="nav__links">
+      <a href="#predict">Predictor</a>
+      <a href="#how">How it works</a>
+      <a href="#result">Result</a>
+    </nav>
+    <a class="nav__cta" href="#predict">Run a prediction</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero__inner">
+      <p class="eyebrow fade-in" style="--d:0s">NYC AIRBNB · ROOM&nbsp;TYPE MODEL</p>
+      <h1 class="hero__title fade-in" style="--d:.08s">
+        Know the room<br> before it's listed.
+      </h1>
+      <p class="hero__sub fade-in" style="--d:.16s">
+        A random-forest classifier trained on 40,000+ New York City listings.
+        Feed it a location and a few activity signals — it tells you whether
+        you're looking at an entire home, a private room, or a shared room.
+      </p>
+      <div class="hero__actions fade-in" style="--d:.24s">
+        <a href="#predict" class="btn btn--primary ripple">
+          <span>Run a prediction</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="#how" class="btn btn--ghost">How it works</a>
+      </div>
+
+      <!-- SIGNATURE: split-flap departure board -->
+      <div class="board fade-in" style="--d:.34s" aria-hidden="true">
+        <div class="board__head">
+          <span>NEIGHBOURHOOD</span><span>PREDICTED ROOM TYPE</span><span>CONF.</span>
+        </div>
+        <div class="board__rows" id="boardRows"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how" id="how">
+    <div class="how__inner">
+      <div class="how__item slide-up">
+        <span class="linebullet linebullet--amber">1</span>
+        <h3>Describe the listing</h3>
+        <p>Borough, neighbourhood, price and a handful of engagement signals — the same fields the model was trained on.</p>
+      </div>
+      <div class="how__item slide-up" style="--d:.08s">
+        <span class="linebullet linebullet--green">2</span>
+        <h3>The pipeline runs</h3>
+        <p>A scikit-learn ColumnTransformer scales the numbers, encodes the geography, and a balanced random forest scores all three classes.</p>
+      </div>
+      <div class="how__item slide-up" style="--d:.16s">
+        <span class="linebullet linebullet--purple">3</span>
+        <h3>Read the signal</h3>
+        <p>Get the predicted room type back with a full confidence breakdown — not just a single guess.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREDICT FORM -->
+  <section class="predict" id="predict">
+    <div class="predict__inner">
+
+      <div class="predict__intro slide-up">
+        <p class="eyebrow">THE MODEL</p>
+        <h2>Enter the listing details</h2>
+        <p class="muted">Pick a borough and neighbourhood — coordinates fill in automatically from historical averages, and you can fine-tune them.</p>
+      </div>
+
+      <form id="predictForm" class="card glass slide-up" style="--d:.06s" novalidate>
+
+        <div class="fieldset">
+          <h4 class="fieldset__title"><span class="linebullet linebullet--amber linebullet--sm">A</span>Location</h4>
+          <div class="grid grid--2">
+            <div class="field">
+              <label for="neighbourhood_group">Borough</label>
+              <select id="neighbourhood_group" name="neighbourhood_group" required></select>
+            </div>
+            <div class="field">
+              <label for="neighbourhood">Neighbourhood</label>
+              <select id="neighbourhood" name="neighbourhood" required></select>
+            </div>
+            <div class="field">
+              <label for="latitude">Latitude</label>
+              <input class="mono" type="number" step="0.0001" id="latitude" name="latitude" required>
+            </div>
+            <div class="field">
+              <label for="longitude">Longitude</label>
+              <input class="mono" type="number" step="0.0001" id="longitude" name="longitude" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="fieldset">
+          <h4 class="fieldset__title"><span class="linebullet linebullet--green linebullet--sm">B</span>Listing economics</h4>
+          <div class="grid grid--3">
+            <div class="field">
+              <label for="price">Price <span class="unit">USD / night</span></label>
+              <input class="mono" type="number" min="1" step="1" id="price" name="price" value="120" required>
+            </div>
+            <div class="field">
+              <label for="minimum_nights">Minimum nights</label>
+              <input class="mono" type="number" min="1" max="365" step="1" id="minimum_nights" name="minimum_nights" value="3" required>
+            </div>
+            <div class="field">
+              <label for="availability_365">Available days <span class="unit">/ 365</span></label>
+              <input class="mono" type="number" min="0" max="365" step="1" id="availability_365" name="availability_365" value="180" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="fieldset">
+          <h4 class="fieldset__title"><span class="linebullet linebullet--purple linebullet--sm">C</span>Track record</h4>
+          <div class="grid grid--3">
+            <div class="field">
+              <label for="number_of_reviews">Total reviews</label>
+              <input class="mono" type="number" min="0" step="1" id="number_of_reviews" name="number_of_reviews" value="24" required>
+            </div>
+            <div class="field">
+              <label for="reviews_per_month">Reviews / month</label>
+              <input class="mono" type="number" min="0" step="0.01" id="reviews_per_month" name="reviews_per_month" value="1.2" required>
+            </div>
+            <div class="field">
+              <label for="calculated_host_listings_count">Host's total listings</label>
+              <input class="mono" type="number" min="0" step="1" id="calculated_host_listings_count" name="calculated_host_listings_count" value="1" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="predict__footer">
+          <p class="api-status" id="apiStatus"><span class="dot" id="apiDot"></span><span id="apiStatusText">Checking API connection…</span></p>
+          <button type="submit" class="btn btn--primary btn--lg ripple" id="submitBtn">
+            <span class="btn__label">Run prediction</span>
+            <span class="btn__spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+
+        <p class="error-msg" id="errorMsg" role="alert"></p>
+      </form>
+
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="result-section" id="result">
+    <div class="result__inner">
+      <div class="result-card glass" id="resultCard">
+        <p class="result-card__placeholder" id="resultPlaceholder">
+          Run a prediction to see the model's read on your listing here.
+        </p>
+
+        <div class="result-card__content" id="resultContent" hidden>
+          <div class="result-top">
+            <div class="result-badge" id="resultBadge">
+              <span class="result-badge__letter" id="resultLetter">E</span>
+            </div>
+            <div class="result-copy">
+              <p class="eyebrow" id="resultConfidenceLevel">CONFIDENCE</p>
+              <div class="result-confidence" id="resultConfidenceText">0%</div>
+              <p class="result-confidence-note" id="resultConfidenceNote">Moderate confidence</p>
+              <p class="result-warning" id="resultConfidenceWarning" hidden></p>
+              <p class="result-label">Predicted room type</p>
+              <h3 class="result-title" id="resultTitle">Entire home/apt</h3>
+            </div>
+            <div class="result-ring" id="resultRing">
+              <svg viewBox="0 0 80 80">
+                <circle class="ring-track" cx="40" cy="40" r="34"></circle>
+                <circle class="ring-fill" id="ringFill" cx="40" cy="40" r="34"></circle>
+              </svg>
+              <span class="ring-label" id="ringLabel">0%</span>
+            </div>
+          </div>
+
+          <div class="prob-list" id="probList"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p>Stay Signal — a demo interface for a scikit-learn room-type classifier trained on NYC Airbnb data. Not affiliated with Airbnb, Inc.</p>
+</footer>
+
+<script src="./neigh_data.js"></script>
+<script src="./script.js"></script>
+</body>
+</html>
