@@ -6,7 +6,7 @@
 // Use the FastAPI server directly when the page is opened from a static host
 // or from the local filesystem. Keep same-origin requests when already served
 // by FastAPI so deployments do not need any extra config.
-const API_BASE = (window.location.protocol === 'file:' || window.location.port === '5500')
+const API_BASE = (window.location.protocol === 'file:' || (['localhost', '127.0.0.1'].includes(window.location.hostname) && window.location.port !== '8000' && window.location.port !== ''))
   ? 'http://127.0.0.1:8000'
   : '';
 
@@ -118,8 +118,11 @@ const apiStatusText = document.getElementById('apiStatusText');
 
 async function checkApi(){
   try{
-    const res = await fetch(`${API_BASE}/`);
-    if (res.ok){
+    let res = await fetch(`${API_BASE}/health`).catch(() => null);
+    if (!res || !res.ok) {
+      res = await fetch(`${API_BASE}/`);
+    }
+    if (res && res.ok){
       apiDot.classList.add('ok');
       apiStatusText.textContent = 'API connected';
     } else throw new Error('bad status');

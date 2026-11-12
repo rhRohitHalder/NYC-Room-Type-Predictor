@@ -1,63 +1,65 @@
-# Stay Signal — frontend for your Airbnb room-type model
+# Stay Signal — NYC Airbnb Room Type Predictor
 
-A dark-glassmorphism single-page frontend for your FastAPI `/predict` endpoint.
-Vanilla HTML/CSS/JS, no build step.
+A dark-glassmorphism single-page web app and FastAPI service powered by a Random Forest machine learning pipeline trained on 40,000+ NYC Airbnb listings.
 
-## Files
+---
 
-```
-templates/index.html      # the page (Jinja2-compatible, no template tags used)
-static/css/style.css      # design system + styles
-static/js/neigh_data.js   # borough → neighbourhood → avg lat/lon (derived from
-                           # the training data, drives the dependent dropdowns)
-static/js/script.js       # form logic, API calls, animations
-```
+## Project Structure
 
-## Wiring it into your existing `main.py`
-
-Your current file only defines API routes. Add these three lines so FastAPI
-serves the page and its assets:
-
-```python
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from fastapi import Request
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
-
-@app.get("/", response_class=None)
-def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+```text
+├── Model_Pipeline.pkl    # Pre-trained scikit-learn pipeline (ColumnTransformer + RandomForest)
+├── main.py               # FastAPI backend (API + static page serving)
+├── index.html            # Single-page frontend
+├── style.css             # Glassmorphic design system & styling
+├── script.js             # Form handling, predictions, animations & health check
+├── neigh_data.js         # Borough-to-neighbourhood mapping with lat/lon centroids
+├── requirements.txt      # Python dependencies
+├── .python-version       # Python version specification for Render / pyenv (3.12.7)
+├── runtime.txt           # Python version for Heroku compatibility
+├── Procfile              # Process manager start command
+└── render.yaml           # Render Infrastructure-as-Code Blueprint
 ```
 
-That replaces your current `greet()` route at `"/"` — the frontend calls
-`GET /` only for a lightweight "is the API up" check (any 200 response is
-fine), so if you'd rather keep `greet()` as JSON, mount the page at a
-different path (e.g. `/app`) and update `API_BASE`/health-check target in
-`static/js/script.js` accordingly.
+---
 
-Drop `templates/` and `static/` next to `main.py`, install
-`jinja2` and `python-multipart` if not already present, then run:
+## Local Development
 
-```bash
-uvicorn main:app --reload
-```
+1. **Activate virtual environment:**
+   ```bash
+   # Windows:
+   .venv\Scripts\activate
+   # Linux / macOS:
+   source .venv/bin/activate
+   ```
 
-and open `http://127.0.0.1:8000/`.
+2. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## Notes
+3. **Run the FastAPI server:**
+   ```bash
+   uvicorn main:app --reload --host 127.0.0.1 --port 8000
+   ```
 
-- The form's field names and types exactly match your `Features` pydantic
-  model, so payloads sent to `/predict` will validate as-is.
-- Selecting a borough + neighbourhood auto-fills latitude/longitude from the
-  historical average for that neighbourhood (both stay editable).
-- The result panel reads `Predicted_room_type` and `Probability` from your
-  response and assumes `Probability` is ordered
-  `["Entire home/apt", "Private room", "Shared room"]` — the order your
-  model's `classes_` attribute produced. If you retrain and the class order
-  changes, update `classOrder` near the top of `renderResult()` in
-  `static/js/script.js`.
-- CORS is already wide open in your backend (`allow_origins=["*"]`), so this
-  will also work if you serve the frontend separately and just point
-  `API_BASE` in `script.js` at your API's URL.
+4. **Access the application:**
+   - Web App UI: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+   - Interactive Swagger API docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+   - Health check: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
+
+---
+
+## Deployment (Render)
+
+This repository is pre-configured for seamless deployment to **Render Web Services**:
+
+1. **Repository Settings on Render**:
+   - **Environment / Runtime**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+   - **Environment Variable**: `PYTHON_VERSION` = `3.12.7`
+
+2. **Automatic Configuration Files Included**:
+   - `.python-version`: Instructs Render's build system to use Python 3.12.7.
+   - `Procfile`: Tells Render / Heroku to bind to `0.0.0.0` and dynamic `$PORT`.
+   - `render.yaml`: Provides Blueprint deployment settings.
